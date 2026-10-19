@@ -19,6 +19,7 @@ Servidor MCP em JavaScript e Node.js para consultar endereços brasileiros pelo 
   - [Conferir a validação](#passo-4-conferir-a-validação)
   - [Testar a busca por endereço](#passo-5-testar-a-busca-por-endereço)
 - [Testes automatizados](#testes-automatizados)
+- [Fluxo de versões e promoção para main](#fluxo-de-versões-e-promoção-para-main)
 - [Estrutura do projeto](#estrutura)
 
 ## Objetivo
@@ -184,7 +185,18 @@ Execute os testes na raiz do repositório:
 npm test
 ```
 
-Os testes usam o executor do Node.js e simulam a resposta do ViaCEP. Eles verificam a consulta por CEP, a busca por endereço, validação de argumentos, ausência de resultados, limite de resultados e falhas da API sem depender da internet. O workflow em `.github/workflows/ci.yml` executa os testes em cada pull request e em atualizações da `main`.
+Os testes usam o executor do Node.js e simulam a resposta do ViaCEP. Eles verificam a consulta por CEP, a busca por endereço, validação de argumentos, ausência de resultados, limite de resultados e falhas da API sem depender da internet. O workflow em `.github/workflows/ci.yml` executa os testes nos pull requests e em atualizações da `develop` e da `main`.
+
+## Fluxo de versões e promoção para main
+
+1. Abra um PR da branch de trabalho para `develop` e confira o resultado dos testes do CI.
+2. Depois do merge em `develop`, o CI testa o código integrado. Se passar, aumenta a versão **patch** (por exemplo, `1.0.0` → `1.0.1`) em `package.json` e `package-lock.json` e registra esse ajuste em `develop`.
+3. O CI abre um PR de `develop` para `main`. Se já houver um PR aberto entre essas branches, ele permanece aberto e recebe automaticamente os novos commits de `develop`.
+4. Teste as ferramentas no MCP Inspector, revise o PR e faça o merge em `main` quando estiver pronto. O merge na `main` continua manual.
+
+A versão anunciada pelo servidor MCP é lida de `package.json`, por isso acompanha a versão do pacote. Cada PR integrado à `develop` gera um incremento patch; mudanças que precisem de versão minor ou major exigem uma decisão manual antes do merge.
+
+Para a criação automática do PR funcionar, em **Settings → Actions → General → Workflow permissions**, ative **Allow GitHub Actions to create and approve pull requests**. O workflow solicita ao `GITHUB_TOKEN` permissão para escrever em `develop` e criar PRs. Se `develop` tiver uma regra que impeça o bot de fazer push, configure uma exceção para essa automação. PRs criados com `GITHUB_TOKEN` podem exigir aprovação manual para executar o CI no próprio PR para `main`; consulte a [documentação do GitHub sobre o GITHUB_TOKEN](https://docs.github.com/en/actions/concepts/security/github_token).
 
 ## Estrutura
 
