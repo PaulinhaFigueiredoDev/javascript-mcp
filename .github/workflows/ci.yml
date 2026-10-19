@@ -39,12 +39,13 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: npx --no -- commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
 
-  preparar-promocao:
+  preparar-release:
+    name: Versionar e abrir PR para main
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'develop'
     needs: test
     runs-on: ubuntu-latest
     concurrency:
-      group: preparar-promocao-develop
+      group: preparar-release-develop
       cancel-in-progress: false
     permissions:
       contents: write
