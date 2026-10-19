@@ -9,12 +9,17 @@ on:
 permissions:
   contents: read
 
+env:
+  HUSKY: 0
+
 jobs:
   test:
     if: github.event_name != 'pull_request' || github.event.action != 'closed' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
@@ -22,6 +27,17 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: node --check src/index.mjs
+      - name: Validar titulo do PR
+        if: github.event_name == 'pull_request' && github.event.action != 'closed'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: printf '%s\n' "$PR_TITLE" | npx --no -- commitlint
+      - name: Validar commits do PR para develop
+        if: github.event_name == 'pull_request' && github.event.action != 'closed' && github.event.pull_request.base.ref == 'develop'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: npx --no -- commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
 
   preparar-promocao:
     if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'develop'
@@ -84,5 +100,5 @@ jobs:
           gh pr create \
             --base main \
             --head develop \
-            --title "Promove develop para main" \
+            --title "chore(release): promove develop para main" \
             --body "Versao patch atualizada em package.json apos merge em develop e testes aprovados. Revise e teste no MCP Inspector antes do merge em main."
