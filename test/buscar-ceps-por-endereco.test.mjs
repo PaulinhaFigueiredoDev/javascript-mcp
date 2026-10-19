@@ -4,16 +4,21 @@ import { buscarCepsPorEndereco, enderecoInputSchema } from '../src/buscar-ceps-p
 
 test('valida UF, cidade e logradouro antes da busca', () => {
   assert.equal(enderecoInputSchema.safeParse({ uf: 'SP', cidade: 'São Paulo', logradouro: 'Praça da Sé' }).success, true);
+  assert.equal(enderecoInputSchema.safeParse({ uf: 'SP', cidade: 'São Paulo', logradouro: 'Rua 25 de Março' }).success, true);
 
   for (const [entrada, mensagem] of [
     [{ uf: 'S1', cidade: 'São Paulo', logradouro: 'Sé' }, 'A UF deve ter 2 letras'],
     [{ uf: 'SP', cidade: 'SP', logradouro: 'Praça da Sé' }, 'A cidade deve ter pelo menos 3 caracteres'],
     [{ uf: 'SP', cidade: 'São Paulo', logradouro: 'Sé' }, 'O logradouro deve ter pelo menos 3 caracteres'],
+    [{ uf: 'SP', cidade: 'São Paulo', logradouro: '123' }, 'O logradouro deve conter pelo menos uma letra'],
+    [{ uf: 'SP', cidade: 'São Paulo', logradouro: ' 4567 ' }, 'O logradouro deve conter pelo menos uma letra'],
   ]) {
     const result = enderecoInputSchema.safeParse(entrada);
     assert.equal(result.success, false);
     assert.equal(result.error.issues[0].message, mensagem);
   }
+
+  assert.equal(enderecoInputSchema.safeParse({ uf: 'SP', cidade: 'São Paulo', logradouro: 123 }).success, false);
 });
 
 test('busca CEPs com os segmentos da URL codificados e apresenta os endereços', async () => {

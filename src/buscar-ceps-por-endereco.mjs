@@ -3,7 +3,10 @@ import * as z from 'zod/v4';
 export const enderecoInputSchema = z.object({
   uf: z.string().regex(/^[A-Za-z]{2}$/, 'A UF deve ter 2 letras'),
   cidade: z.string().trim().min(3, 'A cidade deve ter pelo menos 3 caracteres'),
-  logradouro: z.string().trim().min(3, 'O logradouro deve ter pelo menos 3 caracteres'),
+  logradouro: z.string()
+    .trim()
+    .min(3, 'O logradouro deve ter pelo menos 3 caracteres')
+    .regex(/[A-Za-zÀ-ÖØ-öø-ÿ]/, 'O logradouro deve conter pelo menos uma letra'),
 });
 
 const LIMITE_RESULTADOS = 10;
