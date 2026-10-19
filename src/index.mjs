@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import { cepInputSchema, consultarCep } from './consultar-cep.mjs';
+import { enderecoInputSchema, buscarCepsPorEndereco } from './buscar-ceps-por-endereco.mjs';
 
 // Inicia um servidor MCP que se comunica pela entrada e saída do terminal.
 // A função cria o servidor, configura seu nome e versão e o entrega ao
@@ -18,6 +19,16 @@ const handle = serveStdio(() => {
         inputSchema: cepInputSchema,
       },
       ({ cep }) => consultarCep({ cep }),
+    );
+
+    // Busca possíveis CEPs quando a pessoa conhece o endereço, mas não o CEP.
+    server.registerTool(
+      'buscar-ceps-por-endereco',
+      {
+        description: 'Busca CEPs pela UF, cidade e logradouro. Pode retornar vários endereços.',
+        inputSchema: enderecoInputSchema,
+      },
+      ({ uf, cidade, logradouro }) => buscarCepsPorEndereco({ uf, cidade, logradouro }),
     );
 
     return server;
