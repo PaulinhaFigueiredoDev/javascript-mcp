@@ -1,8 +1,7 @@
 {
   "name": "mcp-dados-brasil",
   "version": "1.0.0",
-  "description": "Servidor MCP em Node.js para consultar dados públicos do Brasil, como CEP e feriados.",
-  "main": "index.js",
+  "description": "Servidor MCP em Node.js para consultar endereços brasileiros por CEP usando o ViaCEP.",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
