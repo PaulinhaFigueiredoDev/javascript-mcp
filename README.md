@@ -55,7 +55,7 @@ Um CEP com formato inválido é rejeitado pela validação. Se o CEP não existi
 
 ### Buscar CEPs pelo endereço
 
-`buscar-ceps-por-endereco` recebe três campos obrigatórios: `uf` (duas letras), `cidade` e `logradouro` (pelo menos três caracteres cada). Use quando souber o endereço, mas não o CEP. A busca pode retornar vários endereços; quanto mais específico for o logradouro, mais precisa tende a ser a lista. O [ViaCEP limita a pesquisa a 50 CEPs](https://viacep.com.br/); esta tool mostra até 10 por chamada para manter o resultado legível.
+`buscar-ceps-por-endereco` recebe três campos obrigatórios: `uf` (duas letras), `cidade` e `logradouro` (pelo menos três caracteres cada). O logradouro precisa conter uma letra: `123` é inválido, mas `Rua 25 de Março` é aceito. Use quando souber o endereço, mas não o CEP. A busca pode retornar vários endereços; quanto mais específico for o logradouro, mais precisa tende a ser a lista. O [ViaCEP limita a pesquisa a 50 CEPs](https://viacep.com.br/); esta tool mostra até 10 por chamada para manter o resultado legível.
 
 Exemplo de entrada JSON:
 
@@ -176,7 +176,7 @@ O painel **Protocol**, à direita, registra as mensagens trocadas entre o Inspec
 
 Na aba **Tools**, selecione **buscar-ceps-por-endereco**. Com **Edit as JSON** desligado, preencha os campos `uf` com `SP`, `cidade` com `São Paulo` e `logradouro` com `Praça da Sé`. Clique em **Execute Tool**. Se preferir **Edit as JSON**, use o objeto do [exemplo acima](#buscar-ceps-pelo-endereço).
 
-Em **Results**, você verá a quantidade de correspondências e, para cada uma, CEP, logradouro, bairro, cidade e UF. Se houver mais de 10 resultados, a resposta mostra os primeiros 10 e sugere refinar o logradouro. Para verificar a validação, experimente `logradouro` igual a `Sé`: o Inspector deve mostrar **Tool Error**, pois são necessários pelo menos três caracteres.
+Em **Results**, você verá a quantidade de correspondências e, para cada uma, CEP, logradouro, bairro, cidade e UF. Se houver mais de 10 resultados, a resposta mostra os primeiros 10 e sugere refinar o logradouro. Para verificar a validação, experimente `logradouro` igual a `Sé`: o Inspector deve mostrar **Tool Error**, pois são necessários pelo menos três caracteres. Experimente também `123`: a mensagem deve informar que o logradouro precisa conter pelo menos uma letra.
 
 ## Testes automatizados
 
