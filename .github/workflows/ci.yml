@@ -43,7 +43,26 @@ jobs:
           node-version: '22'
           cache: npm
       - name: Atualizar versao patch e verificar o codigo
+        env:
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
+          if ! git merge-base --is-ancestor "$MERGE_SHA" HEAD; then
+            echo "O commit de merge do PR nao esta em develop."
+            exit 1
+          fi
+
+          if [ -n "$(git log -1 --format=%s --fixed-strings --grep="(PR #${PR_NUMBER})" "${MERGE_SHA}..HEAD")" ]; then
+            echo "A versao deste PR ja foi atualizada."
+            exit 0
+          fi
+
+          primeiro_commit=$(git rev-list --ancestry-path --reverse "${MERGE_SHA}..HEAD" | sed -n '1p')
+          if [ -n "$primeiro_commit" ] && git show -s --format=%s "$primeiro_commit" | grep -q '^chore: atualiza versao para v'; then
+            echo "A versao deste PR ja foi atualizada por um commit anterior."
+            exit 0
+          fi
+
           npm ci
           npm version patch --no-git-tag-version
           npm test
@@ -52,7 +71,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add package.json package-lock.json
-          git commit -m "chore: atualiza versao para v${versao}"
+          git commit -m "chore: atualiza versao para v${versao} (PR #${PR_NUMBER})"
           git push origin HEAD:develop
       - name: Abrir PR de develop para main, se necessario
         env:
