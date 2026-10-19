@@ -1,0 +1,25 @@
+{
+  "name": "mcp-dados-brasil",
+  "version": "1.0.0",
+  "description": "Servidor MCP em Node.js para consultar dados públicos do Brasil, como CEP e feriados.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PaulinhaFigueiredoDev/mcp-dados-brasil.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/PaulinhaFigueiredoDev/mcp-dados-brasil/issues"
+  },
+  "homepage": "https://github.com/PaulinhaFigueiredoDev/mcp-dados-brasil#readme",
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.3.1",
+    "zod": "^4.6.7"
+  }
+}
