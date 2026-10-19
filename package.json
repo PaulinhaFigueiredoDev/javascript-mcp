@@ -1,6 +1,6 @@
 {
   "name": "mcp-dados-brasil",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Servidor MCP em Node.js para consultar endereços e buscar CEPs usando o ViaCEP.",
   "scripts": {
     "start": "node src/index.mjs",
