@@ -14,7 +14,7 @@ Neste repositório, o servidor é um programa Node.js que oferece a ferramenta `
 | --- | --- |
 | Pessoa | Informa um CEP e solicita a consulta. |
 | Aplicação com cliente MCP | Descobre a ferramenta e envia a chamada. Nos testes deste repositório, esse papel é exercido pelo MCP Inspector. |
-| Servidor MCP | Recebe a chamada de `consultar-cep`, valida o argumento e devolve o resultado. É o código em `src/index.mjs`. |
+| Servidor MCP | Recebe a chamada de `consultar-cep`, valida o argumento e devolve o resultado. O registro da ferramenta está em `src/index.mjs`; a consulta está em `src/consultar-cep.mjs`. |
 | ViaCEP | Recebe a requisição HTTPS do servidor e devolve os dados do endereço. |
 
 ```mermaid
@@ -46,14 +46,14 @@ Se o CEP não tiver exatamente oito dígitos, a validação interrompe a chamada
 
 ## Onde cada conceito aparece no código?
 
-| Código em `src/index.mjs` | Função |
+| Código | Função |
 | --- | --- |
-| `new McpServer(...)` | Cria o servidor e define seu nome e versão. |
-| `serveStdio(...)` | Conecta o servidor à entrada e saída padrão do processo. |
-| `server.registerTool(...)` | Publica o nome, a descrição, a entrada e a função de `consultar-cep`. |
-| `z.object(...)` e `z.string().regex(...)` | Descrevem e validam o argumento `cep`. |
-| `fetch(...)` | Consulta a API do ViaCEP por HTTPS. |
-| `content` e `isError` | Devolvem ao cliente o endereço ou uma mensagem de erro. |
+| `new McpServer(...)` em `src/index.mjs` | Cria o servidor e define seu nome e versão. |
+| `serveStdio(...)` em `src/index.mjs` | Conecta o servidor à entrada e saída padrão do processo. |
+| `server.registerTool(...)` em `src/index.mjs` | Publica o nome, a descrição, a entrada e a função de `consultar-cep`. |
+| `z.object(...)` e `z.string().regex(...)` em `src/consultar-cep.mjs` | Descrevem e validam o argumento `cep`. |
+| `fetch(...)` em `src/consultar-cep.mjs` | Consulta a API do ViaCEP por HTTPS. |
+| `content` e `isError` em `src/consultar-cep.mjs` | Devolvem ao cliente o endereço ou uma mensagem de erro. |
 
 O transporte **stdio** usa a entrada (`stdin`) e a saída (`stdout`) do processo para trocar mensagens do protocolo. Por isso, quando um cliente inicia o servidor, `stdout` deve ficar livre para essas mensagens; logs de depuração devem ir para `stderr`, por exemplo com `console.error`. O servidor deste repositório não abre uma porta HTTP. [Documentação oficial de stdio no SDK](https://ts.sdk.modelcontextprotocol.io/v2/serving/stdio).
 

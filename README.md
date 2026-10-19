@@ -15,6 +15,7 @@ Servidor MCP em JavaScript e Node.js para consultar dados públicos do Brasil. A
   - [Abrir a ferramenta](#passo-2-abrir-a-ferramenta)
   - [Consultar um CEP válido](#passo-3-consultar-um-cep-válido)
   - [Conferir a validação](#passo-4-conferir-a-validação)
+- [Testes automatizados](#testes-automatizados)
 - [Estrutura do projeto](#estrutura)
 
 ## Objetivo
@@ -140,12 +141,25 @@ Você também pode testar `00000000`. Ele passa pela validação de formato, mas
 
 O painel **Protocol**, à direita, registra as mensagens trocadas entre o Inspector e o servidor. As capturas mostram algumas consultas a `resources/list` e `prompts/list` com erro; este projeto oferece apenas uma tool, então essas mensagens não impedem a consulta de CEP.
 
+## Testes automatizados
+
+Execute os testes na raiz do repositório:
+
+```bash
+npm test
+```
+
+Os testes usam o executor do Node.js e simulam a resposta do ViaCEP. Assim, verificam CEP válido, formato inválido, CEP inexistente e falhas da API sem depender da internet. O workflow em `.github/workflows/ci.yml` executa os testes em cada pull request e em atualizações da `main`.
+
 ## Estrutura
 
 ```text
 mcp-dados-brasil/
 ├── src/
-│   └── index.mjs      # Servidor MCP e ferramenta de consulta de CEP
+│   ├── index.mjs      # Inicia o servidor MCP e registra a ferramenta
+│   └── consultar-cep.mjs # Validação e consulta ao ViaCEP
+├── test/              # Testes automatizados da consulta
+├── .github/workflows/ # Testes automáticos no GitHub Actions
 ├── img/               # Capturas do fluxo de teste no Inspector
 ├── docs/
 │   └── entendendo-mcp.md # Conceitos e referências para estudo
