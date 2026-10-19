@@ -2,14 +2,16 @@ name: Testes
 
 on:
   pull_request:
+    types: [opened, reopened, synchronize, closed]
   push:
-    branches: [main]
+    branches: [main, develop]
 
 permissions:
   contents: read
 
 jobs:
   test:
+    if: github.event_name != 'pull_request' || github.event.action != 'closed' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -20,3 +22,48 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: node --check src/index.mjs
+
+  preparar-promocao:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'develop'
+    needs: test
+    runs-on: ubuntu-latest
+    concurrency:
+      group: preparar-promocao-develop
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: develop
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Atualizar versao patch e verificar o codigo
+        run: |
+          npm ci
+          npm version patch --no-git-tag-version
+          npm test
+          node --check src/index.mjs
+          versao=$(node -p "require('./package.json').version")
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore: atualiza versao para v${versao}"
+          git push origin HEAD:develop
+      - name: Abrir PR de develop para main, se necessario
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "$(gh pr list --base main --head develop --state open --json number --jq '.[0].number')" ]; then
+            echo 'Ja existe um PR aberto de develop para main.'
+            exit 0
+          fi
+          gh pr create \
+            --base main \
+            --head develop \
+            --title "Promove develop para main" \
+            --body "Versao patch atualizada em package.json apos merge em develop e testes aprovados. Revise e teste no MCP Inspector antes do merge em main."
