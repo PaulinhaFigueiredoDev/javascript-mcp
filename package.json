@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "Servidor MCP em Node.js para consultar endereços brasileiros por CEP usando o ViaCEP.",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/index.mjs",
+    "test": "node --test"
   },
   "repository": {
     "type": "git",
