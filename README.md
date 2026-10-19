@@ -19,6 +19,7 @@ Servidor MCP em JavaScript e Node.js para consultar endereços brasileiros pelo 
   - [Conferir a validação](#passo-4-conferir-a-validação)
   - [Testar a busca por endereço](#passo-5-testar-a-busca-por-endereço)
 - [Testes automatizados](#testes-automatizados)
+- [Padrão de commits](#padrão-de-commits)
 - [Fluxo de versões e promoção para main](#fluxo-de-versões-e-promoção-para-main)
 - [Estrutura do projeto](#estrutura)
 
@@ -187,6 +188,22 @@ npm test
 
 Os testes usam o executor do Node.js e simulam a resposta do ViaCEP. Eles verificam a consulta por CEP, a busca por endereço, validação de argumentos, ausência de resultados, limite de resultados e falhas da API sem depender da internet. O workflow em `.github/workflows/ci.yml` executa os testes nos pull requests e em atualizações da `develop` e da `main`.
 
+## Padrão de commits
+
+Os novos commits seguem [Conventional Commits](https://www.conventionalcommits.org/pt-br/v1.0.0/). A regra do projeto está em [`commitlint.config.cjs`](commitlint.config.cjs): o título deve ter no máximo 72 caracteres e usar o formato `tipo(escopo opcional): descrição`.
+
+Exemplos:
+
+```text
+feat(cep): adiciona busca por endereço
+fix(ci): evita incremento duplicado da versão
+docs: explica como testar no Inspector
+```
+
+Tipos comuns são `feat` (funcionalidade), `fix` (correção), `docs` (documentação), `test` (testes), `ci` (automação) e `chore` (manutenção). Depois de `npm ci`, o hook `.husky/commit-msg` verifica a mensagem ao executar `git commit`. Se ela não seguir o padrão, o commit é recusado e você pode corrigir a mensagem.
+
+O CI valida os commits dos PRs para `develop` e o título de todo PR. Como os merges usam squash, o título do PR vira a mensagem do commit resultante; por isso, use o mesmo formato no título. A validação dos commits é aplicada aos novos PRs para `develop`, sem exigir alteração do histórico antigo que já está em `main`. Para impedir o merge de um PR com validação reprovada, marque o check **`test`** como obrigatório nas regras de `develop` e `main` no GitHub.
+
 ## Fluxo de versões e promoção para main
 
 1. Abra um PR da branch de trabalho para `develop` e confira o resultado dos testes do CI.
@@ -211,10 +228,12 @@ mcp-dados-brasil/
 │   ├── consultar-cep.mjs             # Consulta um endereço pelo CEP
 │   └── buscar-ceps-por-endereco.mjs  # Busca CEPs pelo endereço
 ├── test/              # Testes automatizados das duas ferramentas
-├── .github/workflows/ # Testes automáticos no GitHub Actions
+├── .github/workflows/ # Testes e validação de commits no GitHub Actions
+├── .husky/            # Validação da mensagem no git commit local
 ├── img/               # Capturas do fluxo de teste no Inspector
 ├── docs/
 │   └── entendendo-mcp.md # Conceitos e referências para estudo
 ├── package.json       # Dependências do projeto
+├── commitlint.config.cjs # Regra de mensagens de commit
 └── README.md
 ```
