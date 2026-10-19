@@ -1,13 +1,16 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
+import { readFileSync } from 'node:fs';
 import { cepInputSchema, consultarCep } from './consultar-cep.mjs';
 import { enderecoInputSchema, buscarCepsPorEndereco } from './buscar-ceps-por-endereco.mjs';
+
+const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
 // Inicia um servidor MCP que se comunica pela entrada e saída do terminal.
 // A função cria o servidor, configura seu nome e versão e o entrega ao
 // serveStdio, que cuida da comunicação com os clientes MCP.
 const handle = serveStdio(() => {
-    const server = new McpServer({ name: 'mcp-dados-brasil', version: '1.0.0' });
+    const server = new McpServer({ name: 'mcp-dados-brasil', version });
 
 // Registra a tool de consulta de CEP.
 // O inputSchema valida o CEP recebido; a função async processa a consulta
