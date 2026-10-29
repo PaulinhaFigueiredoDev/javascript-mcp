@@ -1,6 +1,9 @@
 import * as z from 'zod/v4';
 import { enderecoViaCepSchema } from './endereco-viacep.mjs';
 
+const LIMITE_RESULTADOS = 10;
+const LIMITE_VIACEP = 50;
+
 export const enderecoInputSchema = z.object({
   uf: z.string().regex(/^[A-Za-z]{2}$/, 'A UF deve ter 2 letras'),
   cidade: z.string().trim().min(3, 'A cidade deve ter pelo menos 3 caracteres'),
@@ -8,11 +11,15 @@ export const enderecoInputSchema = z.object({
     .trim()
     .min(3, 'O logradouro deve ter pelo menos 3 caracteres')
     .regex(/[A-Za-zÀ-ÖØ-öø-ÿ]/, 'O logradouro deve conter pelo menos uma letra'),
+  offset: z.number().int().min(0).max(LIMITE_VIACEP - 1)
+    .describe('Índice do primeiro resultado, começando em 0. Use o próximo offset informado na resposta.')
+    .optional(),
+  limit: z.number().int().min(1).max(LIMITE_RESULTADOS)
+    .describe('Quantidade de resultados por chamada, de 1 a 10. O padrão é 10.')
+    .optional(),
 });
 
-const LIMITE_RESULTADOS = 10;
-
-export async function buscarCepsPorEndereco({ uf, cidade, logradouro }, fetchImpl = fetch) {
+export async function buscarCepsPorEndereco({ uf, cidade, logradouro, offset = 0, limit = LIMITE_RESULTADOS }, fetchImpl = fetch) {
   const ufNormalizada = uf.toUpperCase();
   const cidadeNormalizada = cidade.trim();
   const logradouroNormalizado = logradouro.trim();
@@ -33,14 +40,26 @@ export async function buscarCepsPorEndereco({ uf, cidade, logradouro }, fetchImp
       };
     }
 
-    const itens = enderecos.slice(0, LIMITE_RESULTADOS).map((endereco, indice) =>
-      `${indice + 1}. CEP: ${endereco.cep}\nLogradouro: ${endereco.logradouro}\nBairro: ${endereco.bairro}\nCidade: ${endereco.localidade}\nUF: ${endereco.uf}`,
+    if (offset >= enderecos.length) {
+      return {
+        content: [{ type: 'text', text: `A busca retornou ${enderecos.length} resultados, mas nenhum a partir do offset ${offset}. Use um offset entre 0 e ${enderecos.length - 1}.` }],
+      };
+    }
+
+    const pagina = enderecos.slice(offset, offset + limit);
+    const itens = pagina.map((endereco, indice) =>
+      `${offset + indice + 1}. CEP: ${endereco.cep}\nLogradouro: ${endereco.logradouro}\nBairro: ${endereco.bairro}\nCidade: ${endereco.localidade}\nUF: ${endereco.uf}`,
     );
-    const resumo = enderecos.length > LIMITE_RESULTADOS
-      ? `Exibindo ${LIMITE_RESULTADOS} de ${enderecos.length} resultados. Refine o logradouro para uma busca mais precisa.`
-      : enderecos.length === 1
-        ? '1 resultado encontrado.'
-        : `${enderecos.length} resultados encontrados.`;
+    const proximoOffset = offset + pagina.length;
+    let resumo;
+    if (offset === 0 && proximoOffset === enderecos.length) {
+      resumo = enderecos.length === 1 ? '1 resultado encontrado.' : `${enderecos.length} resultados encontrados.`;
+    } else {
+      resumo = `Exibindo ${offset + 1} a ${proximoOffset} de ${enderecos.length} resultados retornados pelo ViaCEP.`;
+      if (proximoOffset < enderecos.length) {
+        resumo += ` Para ver os próximos, repita a busca com offset=${proximoOffset}.`;
+      }
+    }
 
     return {
       content: [{ type: 'text', text: `${resumo}\n\n${itens.join('\n\n')}` }],

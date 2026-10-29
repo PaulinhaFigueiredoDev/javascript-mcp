@@ -68,9 +68,9 @@ Se o CEP não tiver exatamente oito dígitos, a validação interrompe a chamada
 2. O usuário informa, por exemplo, `{ "uf": "SP", "cidade": "São Paulo", "logradouro": "Praça da Sé" }`.
 3. O esquema Zod valida que a UF tem duas letras, que cidade e logradouro têm pelo menos três caracteres e que o logradouro contém uma letra. Assim, `123` é rejeitado, mas `Rua 25 de Março` é aceito. O servidor remove espaços nas extremidades e envia a UF em maiúsculas.
 4. O servidor consulta o endpoint de [pesquisa de CEP do ViaCEP](https://viacep.com.br/) com os segmentos da URL codificados. Diferentemente da consulta por CEP, a resposta é uma lista de endereços.
-5. A tool mostra até 10 endereços com CEP, logradouro, bairro, cidade e UF. Se não houver correspondências, informa isso ao cliente; se a API falhar, devolve um resultado de erro.
+5. A tool mostra até 10 endereços por chamada com CEP, logradouro, bairro, cidade e UF. O cliente pode repetir a busca com `offset` para acessar os seguintes. Se não houver correspondências, informa isso ao cliente; se a API falhar, devolve um resultado de erro.
 
-O ViaCEP informa um máximo de 50 CEPs por pesquisa. Para encontrar um CEP específico, informe um logradouro mais completo. Consulte o [exemplo de uso no README](../README.md#buscar-ceps-pelo-endereço).
+O ViaCEP informa um máximo de 50 CEPs por pesquisa. `offset` permite percorrer somente os resultados devolvidos por essa consulta; para encontrar um CEP fora deles, informe um logradouro mais completo. Consulte o [exemplo de uso no README](../README.md#buscar-ceps-pelo-endereço).
 
 ## Onde cada conceito aparece no código?
 
