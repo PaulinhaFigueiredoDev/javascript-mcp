@@ -1,4 +1,4 @@
-# mcp-dados-brasil
+# javascript-mcp
 
 Servidor MCP em JavaScript e Node.js para consultar endereços brasileiros pelo CEP ou buscar possíveis CEPs a partir de um endereço, usando o [ViaCEP](https://viacep.com.br/).
 
@@ -19,8 +19,6 @@ Servidor MCP em JavaScript e Node.js para consultar endereços brasileiros pelo 
   - [Conferir a validação](#passo-4-conferir-a-validação)
   - [Testar a busca por endereço](#passo-5-testar-a-busca-por-endereço)
 - [Testes automatizados](#testes-automatizados)
-- [Padrão de commits](#padrão-de-commits)
-- [Fluxo de versões e promoção para main](#fluxo-de-versões-e-promoção-para-main)
 - [Estrutura do projeto](#estrutura)
 
 ## Objetivo
@@ -87,8 +85,8 @@ Se a busca não encontrar correspondências, a tool responde `Nenhum CEP encontr
 Clone o repositório e instale as dependências:
 
 ```bash
-git clone https://github.com/PaulinhaFigueiredoDev/mcp-dados-brasil.git
-cd mcp-dados-brasil
+git clone https://github.com/PaulinhaFigueiredoDev/javascript-mcp.git
+cd javascript-mcp
 npm ci
 ```
 
@@ -180,49 +178,30 @@ Em **Results**, você verá a quantidade de correspondências e, para cada uma, 
 
 ## Testes automatizados
 
-Execute os testes na raiz do repositório:
+Para repetir no navegador o caminho de um usuario usando o Inspector, instale as dependências e o Chromium do Playwright uma vez:
 
 ```bash
-npm test
+npm ci
+npx playwright install chromium
 ```
 
-Os testes usam o executor do Node.js e simulam a resposta do ViaCEP. Eles verificam a consulta por CEP, a busca por endereço, validação de argumentos, ausência de resultados, limite de resultados e falhas da API sem depender da internet. O workflow em `.github/workflows/ci.yml` executa os testes nos pull requests e em atualizações da `develop` e da `main`.
+Na raiz do projeto, execute a automação e abra o relatório:
 
-## Padrão de commits
-
-Os novos commits seguem [Conventional Commits](https://www.conventionalcommits.org/pt-br/v1.0.0/). A regra do projeto está em [`commitlint.config.cjs`](commitlint.config.cjs): o título deve ter no máximo 72 caracteres e usar o formato `tipo(escopo opcional): descrição`.
-
-Exemplos:
-
-```text
-feat(cep): adiciona busca por endereço
-fix(ci): evita incremento duplicado da versão
-docs: explica como testar no Inspector
+```bash
+npm run test:e2e -- --trace on --reporter=html
+npx playwright show-report
 ```
 
-Tipos comuns são `feat` (funcionalidade), `fix` (correção), `docs` (documentação), `test` (testes), `ci` (automação) e `chore` (manutenção). Depois de `npm ci`, o hook `.husky/commit-msg` verifica a mensagem ao executar `git commit`. Se ela não seguir o padrão, o commit é recusado e você pode corrigir a mensagem.
+O primeiro comando inicia o MCP Inspector e o servidor automaticamente, executa os testes no Chromium e grava os passos da navegação. O segundo abre o relatório no navegador. Clique em um teste e depois em **Trace** para ver cada ação, as imagens da página e o resultado exibido pelo Inspector. A resposta consultada no ViaCEP também aparece como anexo `resposta-real-viacep.json`. Para acompanhar o navegador enquanto a automação acontece, acrescente `--headed` ao primeiro comando.
 
-O CI valida os commits dos PRs para `develop` e o título de todo PR. Como os merges usam squash, o título do PR vira a mensagem do commit resultante; por isso, use o mesmo formato no título. A validação dos commits é aplicada aos novos PRs para `develop`, sem exigir alteração do histórico antigo que já está em `main`. Para impedir o merge de um PR com validação reprovada, marque o check **`test`** como obrigatório nas regras de `develop` e `main` no GitHub.
+O teste consulta o CEP `04344902` e busca `Rua Augusta` em São Paulo usando o **ViaCEP real**, comparando o texto mostrado no Inspector com os dados recebidos da API. Na busca, confere os dez primeiros endereços e a indicação do limite. Também envia `abc` para conferir a validação do CEP. É necessária conexão com a internet; uma indisponibilidade ou alteração dos dados da API pode fazer o teste falhar.
 
-## Fluxo de versões e promoção para main
-
-1. Abra um PR da branch de trabalho para `develop` e confira o resultado dos testes do CI.
-2. Depois do merge em `develop`, o CI testa o código integrado. Se passar, aumenta a versão **patch** (por exemplo, `1.0.0` → `1.0.1`) em `package.json` e `package-lock.json` e registra esse ajuste em `develop`.
-3. O CI abre um PR de `develop` para `main`. Se já houver um PR aberto entre essas branches, ele permanece aberto e recebe automaticamente os novos commits de `develop`.
-4. Teste as ferramentas no MCP Inspector, revise o PR e faça o merge em `main` quando estiver pronto. O merge na `main` continua manual.
-
-A versão anunciada pelo servidor MCP é lida de `package.json`, por isso acompanha a versão do pacote. Cada PR integrado à `develop` gera um incremento patch; mudanças que precisem de versão minor ou major exigem uma decisão manual antes do merge.
-
-O workflow identifica se a versão já foi atualizada para o PR integrado e evita repetir o incremento quando a execução é refeita.
-
-Para a criação automática do PR funcionar, em **Settings → Actions → General → Workflow permissions**, ative **Allow GitHub Actions to create and approve pull requests**. O workflow solicita ao `GITHUB_TOKEN` permissão para escrever em `develop` e criar PRs. Se `develop` tiver uma regra que impeça o bot de fazer push, configure uma exceção para essa automação. PRs criados com `GITHUB_TOKEN` podem exigir aprovação manual para executar o CI no próprio PR para `main`; consulte a [documentação do GitHub sobre o GITHUB_TOKEN](https://docs.github.com/en/actions/concepts/security/github_token).
-
-Se uma execução antiga tiver aumentado a versão e falhado apenas ao criar o PR, confira a versão em `develop` e abra o PR manualmente após ajustar a permissão. Não reexecute esse job antigo, pois ele pode aumentar a versão outra vez.
+O workflow de CI também instala o Chromium e executa `npm run test:e2e` após os testes do Node.js.
 
 ## Estrutura
 
 ```text
-mcp-dados-brasil/
+javascript-mcp/
 ├── src/
 │   ├── index.mjs                     # Inicia o servidor MCP e registra as ferramentas
 │   ├── consultar-cep.mjs             # Consulta um endereço pelo CEP
