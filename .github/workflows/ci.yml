@@ -26,6 +26,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
       - run: node --check src/index.mjs
       - name: Validar titulo do PR
         if: github.event_name == 'pull_request' && github.event.action != 'closed'

@@ -10,7 +10,7 @@ const { version } = JSON.parse(readFileSync(new URL('../package.json', import.me
 // A função cria o servidor, configura seu nome e versão e o entrega ao
 // serveStdio, que cuida da comunicação com os clientes MCP.
 const handle = serveStdio(() => {
-    const server = new McpServer({ name: 'mcp-dados-brasil', version });
+    const server = new McpServer({ name: 'javascript-mcp', version });
 
 // Registra a tool de consulta de CEP.
 // O inputSchema valida o CEP recebido; a função async processa a consulta

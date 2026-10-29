@@ -1,6 +1,6 @@
 # Entendendo o MCP neste projeto
 
-Este guia explica os conceitos usados no `mcp-dados-brasil`. Para instalar e executar o servidor, consulte o [README](../README.md).
+Este guia explica os conceitos usados no `javascript-mcp`. Para instalar e executar o servidor, consulte o [README](../README.md).
 
 ## O que é MCP?
 
@@ -12,16 +12,34 @@ Neste repositório, o servidor é um programa Node.js que oferece as ferramentas
 
 | Participante | Papel neste projeto |
 | --- | --- |
-| Pessoa | Informa um CEP ou os dados de um endereço e solicita a consulta. |
+| Usuário | Informa um CEP ou os dados de um endereço e solicita a consulta. |
 | Aplicação com cliente MCP | Descobre a ferramenta e envia a chamada. Nos testes deste repositório, esse papel é exercido pelo MCP Inspector. |
 | Servidor MCP | Recebe a chamada de uma das ferramentas, valida os argumentos e devolve o resultado. Os registros estão em `src/index.mjs`; as consultas ficam em módulos próprios na pasta `src/`. |
 | ViaCEP | Recebe a requisição HTTPS do servidor e devolve os dados do endereço. |
 
 ```mermaid
-flowchart LR
-    U[Pessoa] --> C[Cliente MCP no Inspector ou em uma aplicação]
-    C <-->|MCP por stdio| S[Servidor Node.js]
-    S <-->|HTTPS| V[ViaCEP]
+%%{init: {"flowchart": {"nodeSpacing": 100}}}%%
+flowchart TD
+    A["1. Usuário solicita uma consulta"]
+    B["2. Cliente pergunta ao servidor quais tools existem<br/>(tools/list)"]
+    C{"3. Qual tool usar?"}
+    D["4. Cliente envia o nome da tool e os argumentos<br/>(tools/call)"]
+    E{"5. Argumentos válidos?"}
+    F["6. Servidor consulta o ViaCEP"]
+    G{"7. Resultado da consulta"}
+    H["8. Resposta volta ao cliente e é mostrada ao usuário"]
+
+    A --> B --> C
+    C --> T1["consultar-cep"]
+    C --> T2["buscar-ceps-por-endereco"]
+    T1 --> D
+    T2 --> D
+    D --> E
+    E -->|Não| I["Erro de validação"] --> H
+    E -->|Sim| F --> G
+    G -->|Encontrado| J["Endereço ou lista de endereços"] --> H
+    G -->|Sem resultado| K["CEP inexistente ou lista vazia"] --> H
+    G -->|Falha| L["Resultado de erro"] --> H
 ```
 
 Uma aplicação de IA costuma atuar como **host** e manter um cliente MCP para cada servidor ao qual se conecta. O Inspector é uma ferramenta de teste que faz o papel de cliente sem precisar de um modelo de IA. [Arquitetura oficial](https://modelcontextprotocol.io/docs/learn/architecture).
@@ -37,7 +55,7 @@ Este projeto implementa **duas tools**. Por isso, a aba **Tools** do Inspector m
 ## Como a consulta de CEP acontece?
 
 1. O cliente MCP descobre a ferramenta `consultar-cep` e seu argumento obrigatório `cep`.
-2. A pessoa informa `01001000`. No formulário do Inspector, basta preencher o campo; no modo JSON, a entrada é `{ "cep": "01001000" }`.
+2. O usuário informa `01001000`. No formulário do Inspector, basta preencher o campo; no modo JSON, a entrada é `{ "cep": "01001000" }`.
 3. O cliente envia a chamada da ferramenta ao servidor MCP. O SDK valida o CEP com o esquema Zod antes de executar a função.
 4. O servidor chama `https://viacep.com.br/ws/01001000/json/` com o `fetch` do Node.js.
 5. O servidor transforma a resposta em texto com CEP, logradouro, bairro, cidade e UF e a devolve ao cliente.
@@ -47,7 +65,7 @@ Se o CEP não tiver exatamente oito dígitos, a validação interrompe a chamada
 ## Como a busca por endereço acontece?
 
 1. O cliente descobre `buscar-ceps-por-endereco` e seus três argumentos obrigatórios: `uf`, `cidade` e `logradouro`.
-2. A pessoa informa, por exemplo, `{ "uf": "SP", "cidade": "São Paulo", "logradouro": "Praça da Sé" }`.
+2. O usuário informa, por exemplo, `{ "uf": "SP", "cidade": "São Paulo", "logradouro": "Praça da Sé" }`.
 3. O esquema Zod valida que a UF tem duas letras, que cidade e logradouro têm pelo menos três caracteres e que o logradouro contém uma letra. Assim, `123` é rejeitado, mas `Rua 25 de Março` é aceito. O servidor remove espaços nas extremidades e envia a UF em maiúsculas.
 4. O servidor consulta o endpoint de [pesquisa de CEP do ViaCEP](https://viacep.com.br/) com os segmentos da URL codificados. Diferentemente da consulta por CEP, a resposta é uma lista de endereços.
 5. A tool mostra até 10 endereços com CEP, logradouro, bairro, cidade e UF. Se não houver correspondências, informa isso ao cliente; se a API falhar, devolve um resultado de erro.
@@ -86,5 +104,3 @@ O transporte **stdio** usa a entrada (`stdin`) e a saída (`stdout`) do processo
 - [Zod — conceitos básicos](https://zod.dev/basics): criação de esquemas e validação de entradas.
 - [Node.js — `fetch` e `AbortSignal.timeout`](https://nodejs.org/api/globals.html): chamada HTTP e limite de tempo usados na consulta.
 - [Node.js — módulos ECMAScript](https://nodejs.org/api/esm.html): por que o arquivo `.mjs` pode usar `import` em JavaScript.
-
-Para estudar em ordem, comece pela **arquitetura MCP**, siga para **primeiro servidor**, depois leia **tools** e **stdio**. Use a documentação do ViaCEP, Zod e Node.js para entender a implementação específica deste repositório.
