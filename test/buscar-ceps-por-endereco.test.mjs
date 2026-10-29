@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { mock, test } from 'node:test';
 import { buscarCepsPorEndereco, enderecoInputSchema } from '../src/buscar-ceps-por-endereco.mjs';
+import { buscarCepsOutputSchema } from '../src/saida-estruturada.mjs';
 
 test('valida UF, cidade e logradouro antes da busca', () => {
   assert.equal(enderecoInputSchema.safeParse({ uf: 'SP', cidade: 'São Paulo', logradouro: 'Praça da Sé' }).success, true);
@@ -48,6 +49,14 @@ test('busca CEPs com os segmentos da URL codificados e apresenta os endereços',
   assert.match(result.content[0].text, /1 resultado encontrado/);
   assert.match(result.content[0].text, /CEP: 01001-000/);
   assert.match(result.content[0].text, /Logradouro: Praça da Sé/);
+  assert.deepEqual(result.structuredContent, {
+    enderecos: [{ cep: '01001-000', logradouro: 'Praça da Sé', bairro: 'Sé', cidade: 'São Paulo', uf: 'SP' }],
+    total: 1,
+    offset: 0,
+    limit: 10,
+    proximoOffset: null,
+  });
+  assert.equal(buscarCepsOutputSchema.safeParse(result.structuredContent).success, true);
 });
 
 test('informa quando a busca não encontra CEPs', async () => {
@@ -58,6 +67,8 @@ test('informa quando a busca não encontra CEPs', async () => {
 
   assert.equal(result.isError, undefined);
   assert.match(result.content[0].text, /Nenhum CEP encontrado/);
+  assert.deepEqual(result.structuredContent, { enderecos: [], total: 0, offset: 0, limit: 10, proximoOffset: null });
+  assert.equal(buscarCepsOutputSchema.safeParse(result.structuredContent).success, true);
 });
 
 test('aceita logradouro e bairro vazios em um endereço da busca', async () => {
@@ -109,12 +120,19 @@ test('permite buscar os resultados depois dos dez primeiros', async () => {
   assert.match(result.content[0].text, /offset=10/);
   assert.match(result.content[0].text, /CEP: 00000009/);
   assert.doesNotMatch(result.content[0].text, /CEP: 00000010/);
+  assert.deepEqual({ ...result.structuredContent, enderecos: result.structuredContent.enderecos.length }, {
+    enderecos: 10, total: 11, offset: 0, limit: 10, proximoOffset: 10,
+  });
+  assert.equal(buscarCepsOutputSchema.safeParse(result.structuredContent).success, true);
 
   const ultimaPagina = await buscarCepsPorEndereco({ ...entrada, offset: 10 }, fetchImpl);
   assert.equal(ultimaPagina.isError, undefined);
   assert.match(ultimaPagina.content[0].text, /Exibindo 11 a 11 de 11 resultados/);
   assert.match(ultimaPagina.content[0].text, /11\. CEP: 00000010/);
   assert.doesNotMatch(ultimaPagina.content[0].text, /offset=11/);
+  assert.equal(ultimaPagina.structuredContent.enderecos[0].cep, '00000010');
+  assert.equal(ultimaPagina.structuredContent.proximoOffset, null);
+  assert.equal(buscarCepsOutputSchema.safeParse(ultimaPagina.structuredContent).success, true);
 });
 
 test('respeita o limite escolhido e informa quando o offset está fora da lista', async () => {
@@ -133,11 +151,18 @@ test('respeita o limite escolhido e informa quando o offset está fora da lista'
   assert.match(pagina.content[0].text, /3\. CEP: 00000002/);
   assert.match(pagina.content[0].text, /offset=4/);
   assert.doesNotMatch(pagina.content[0].text, /CEP: 00000004/);
+  assert.deepEqual(pagina.structuredContent.enderecos.map(({ cep }) => cep), ['00000002', '00000003']);
+  assert.deepEqual({ total: pagina.structuredContent.total, offset: pagina.structuredContent.offset, limit: pagina.structuredContent.limit, proximoOffset: pagina.structuredContent.proximoOffset }, {
+    total: 5, offset: 2, limit: 2, proximoOffset: 4,
+  });
+  assert.equal(buscarCepsOutputSchema.safeParse(pagina.structuredContent).success, true);
 
   const foraDaLista = await buscarCepsPorEndereco({ ...entrada, offset: 5 }, fetchImpl);
   assert.equal(foraDaLista.isError, undefined);
   assert.match(foraDaLista.content[0].text, /nenhum a partir do offset 5/);
   assert.match(foraDaLista.content[0].text, /offset entre 0 e 4/);
+  assert.deepEqual(foraDaLista.structuredContent, { enderecos: [], total: 5, offset: 5, limit: 10, proximoOffset: null });
+  assert.equal(buscarCepsOutputSchema.safeParse(foraDaLista.structuredContent).success, true);
 });
 
 test('retorna erro quando a API falha ou responde em formato inesperado', async () => {

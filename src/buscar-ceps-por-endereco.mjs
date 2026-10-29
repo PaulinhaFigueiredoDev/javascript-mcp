@@ -1,5 +1,6 @@
 import * as z from 'zod/v4';
 import { enderecoViaCepSchema } from './endereco-viacep.mjs';
+import { paraEnderecoEstruturado } from './saida-estruturada.mjs';
 
 const LIMITE_RESULTADOS = 10;
 const LIMITE_VIACEP = 50;
@@ -37,12 +38,14 @@ export async function buscarCepsPorEndereco({ uf, cidade, logradouro, offset = 0
     if (enderecos.length === 0) {
       return {
         content: [{ type: 'text', text: `Nenhum CEP encontrado para ${logradouroNormalizado}, ${cidadeNormalizada}/${ufNormalizada}.` }],
+        structuredContent: { enderecos: [], total: 0, offset, limit, proximoOffset: null },
       };
     }
 
     if (offset >= enderecos.length) {
       return {
         content: [{ type: 'text', text: `A busca retornou ${enderecos.length} resultados, mas nenhum a partir do offset ${offset}. Use um offset entre 0 e ${enderecos.length - 1}.` }],
+        structuredContent: { enderecos: [], total: enderecos.length, offset, limit, proximoOffset: null },
       };
     }
 
@@ -63,6 +66,13 @@ export async function buscarCepsPorEndereco({ uf, cidade, logradouro, offset = 0
 
     return {
       content: [{ type: 'text', text: `${resumo}\n\n${itens.join('\n\n')}` }],
+      structuredContent: {
+        enderecos: pagina.map(paraEnderecoEstruturado),
+        total: enderecos.length,
+        offset,
+        limit,
+        proximoOffset: proximoOffset < enderecos.length ? proximoOffset : null,
+      },
     };
   } catch (error) {
     console.error('Falha ao buscar CEPs no ViaCEP:', error);

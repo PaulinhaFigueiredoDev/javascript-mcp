@@ -58,7 +58,7 @@ Este projeto implementa **duas tools**. Por isso, a aba **Tools** do Inspector m
 2. O usuário informa `01001000`. No formulário do Inspector, basta preencher o campo; no modo JSON, a entrada é `{ "cep": "01001000" }`.
 3. O cliente envia a chamada da ferramenta ao servidor MCP. O SDK valida o CEP com o esquema Zod antes de executar a função.
 4. O servidor chama `https://viacep.com.br/ws/01001000/json/` com o `fetch` do Node.js.
-5. O servidor transforma a resposta em texto com CEP, logradouro, bairro, cidade e UF e a devolve ao cliente.
+5. O servidor transforma a resposta em texto com CEP, logradouro, bairro, cidade e UF e também devolve esses dados em `structuredContent`.
 
 Se o CEP não tiver exatamente oito dígitos, a validação interrompe a chamada antes do `fetch`. Se o ViaCEP indicar um CEP inexistente ou a consulta falhar, a ferramenta devolve um resultado de erro. Veja o [passo a passo com capturas no README](../README.md#como-testar-com-o-mcp-inspector).
 
@@ -68,7 +68,7 @@ Se o CEP não tiver exatamente oito dígitos, a validação interrompe a chamada
 2. O usuário informa, por exemplo, `{ "uf": "SP", "cidade": "São Paulo", "logradouro": "Praça da Sé" }`.
 3. O esquema Zod valida que a UF tem duas letras, que cidade e logradouro têm pelo menos três caracteres e que o logradouro contém uma letra. Assim, `123` é rejeitado, mas `Rua 25 de Março` é aceito. O servidor remove espaços nas extremidades e envia a UF em maiúsculas.
 4. O servidor consulta o endpoint de [pesquisa de CEP do ViaCEP](https://viacep.com.br/) com os segmentos da URL codificados. Diferentemente da consulta por CEP, a resposta é uma lista de endereços.
-5. A tool mostra até 10 endereços por chamada com CEP, logradouro, bairro, cidade e UF. O cliente pode repetir a busca com `offset` para acessar os seguintes. Se não houver correspondências, informa isso ao cliente; se a API falhar, devolve um resultado de erro.
+5. A tool mostra até 10 endereços por chamada com CEP, logradouro, bairro, cidade e UF. O cliente pode repetir a busca com `offset` para acessar os seguintes. O `structuredContent` contém os endereços da página e os dados de paginação. Se não houver correspondências, informa isso ao cliente; se a API falhar, devolve um resultado de erro.
 
 O ViaCEP informa um máximo de 50 CEPs por pesquisa. `offset` permite percorrer somente os resultados devolvidos por essa consulta; para encontrar um CEP fora deles, informe um logradouro mais completo. Consulte o [exemplo de uso no README](../README.md#buscar-ceps-pelo-endereço).
 
@@ -84,6 +84,7 @@ O ViaCEP informa um máximo de 50 CEPs por pesquisa. `offset` permite percorrer 
 | `content` e `isError` em `src/consultar-cep.mjs` | Devolvem ao cliente o endereço ou uma mensagem de erro. |
 | `enderecoInputSchema` em `src/buscar-ceps-por-endereco.mjs` | Valida UF, cidade e logradouro para a pesquisa. |
 | `buscarCepsPorEndereco(...)` em `src/buscar-ceps-por-endereco.mjs` | Consulta o ViaCEP e apresenta uma lista de até 10 endereços. |
+| `outputSchema` e `structuredContent` | Descrevem e devolvem resultados em JSON sem exigir que o cliente interprete o texto. |
 
 O transporte **stdio** usa a entrada (`stdin`) e a saída (`stdout`) do processo para trocar mensagens do protocolo. Por isso, quando um cliente inicia o servidor, `stdout` deve ficar livre para essas mensagens; logs de depuração devem ir para `stderr`, por exemplo com `console.error`. O servidor deste repositório não abre uma porta HTTP. [Documentação oficial de stdio no SDK](https://ts.sdk.modelcontextprotocol.io/v2/serving/stdio).
 

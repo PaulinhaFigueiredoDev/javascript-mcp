@@ -3,6 +3,7 @@ import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import { readFileSync } from 'node:fs';
 import { cepInputSchema, consultarCep } from './consultar-cep.mjs';
 import { enderecoInputSchema, buscarCepsPorEndereco } from './buscar-ceps-por-endereco.mjs';
+import { consultarCepOutputSchema, buscarCepsOutputSchema } from './saida-estruturada.mjs';
 
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
@@ -20,6 +21,7 @@ const handle = serveStdio(() => {
       {
         description: "Consulta informações de um CEP",
         inputSchema: cepInputSchema,
+        outputSchema: consultarCepOutputSchema,
       },
       ({ cep }) => consultarCep({ cep }),
     );
@@ -30,6 +32,7 @@ const handle = serveStdio(() => {
       {
         description: 'Busca CEPs pela UF, cidade e logradouro. Retorna até 10 por chamada; use offset para obter os próximos resultados.',
         inputSchema: enderecoInputSchema,
+        outputSchema: buscarCepsOutputSchema,
       },
       ({ uf, cidade, logradouro, offset, limit }) => buscarCepsPorEndereco({ uf, cidade, logradouro, offset, limit }),
     );
