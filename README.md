@@ -46,6 +46,8 @@ UF: SP
 
 Um CEP com formato inválido é rejeitado pela validação. Se o CEP não existir, a ferramenta informa que ele não foi encontrado. Falhas na consulta ao ViaCEP também são retornadas como erro da ferramenta.
 
+Além do texto, a tool devolve `structuredContent` com `encontrado` e `endereco`. Quando o CEP não existe, esses campos são `false` e `null`, respectivamente. Em uma consulta bem-sucedida, `endereco` contém `cep`, `logradouro`, `bairro`, `cidade` e `uf`.
+
 ### Buscar CEPs pelo endereço
 
 `buscar-ceps-por-endereco` recebe três campos obrigatórios: `uf` (duas letras), `cidade` e `logradouro` (pelo menos três caracteres cada). O logradouro precisa conter uma letra: `123` é inválido, mas `Rua 25 de Março` é aceito. Use quando souber o endereço, mas não o CEP. A busca pode retornar vários endereços; quanto mais específico for o logradouro, mais precisa tende a ser a lista. O [ViaCEP limita a pesquisa a 50 CEPs](https://viacep.com.br/); esta tool mostra até 10 por chamada para manter o resultado legível.
@@ -77,6 +79,8 @@ UF: SP
 ```
 
 Se a busca não encontrar correspondências, a tool responde `Nenhum CEP encontrado...`. Se o ViaCEP falhar, a tool devolve um erro. A UF pode ser escrita em letras minúsculas; ela será enviada em maiúsculas ao ViaCEP.
+
+A busca também devolve `structuredContent` para clientes que precisam usar os dados sem interpretar o texto. O objeto contém `enderecos` (somente a página solicitada), `total` (quantidade devolvida pelo ViaCEP, até 50), `offset`, `limit` e `proximoOffset` (`null` na última página). Cada endereço tem `cep`, `logradouro`, `bairro`, `cidade` e `uf`. As duas tools anunciam `outputSchema` para descrever esse formato.
 
 ## Requisitos
 

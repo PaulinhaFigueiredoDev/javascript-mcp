@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { mock, test } from 'node:test';
 import { cepInputSchema, consultarCep } from '../src/consultar-cep.mjs';
+import { consultarCepOutputSchema } from '../src/saida-estruturada.mjs';
 
 test('aceita um CEP com 8 dígitos e rejeita formatos inválidos', () => {
   assert.equal(cepInputSchema.safeParse({ cep: '01001000' }).success, true);
@@ -32,6 +33,17 @@ test('retorna os dados do endereço para um CEP encontrado', async () => {
   assert.match(result.content[0].text, /CEP: 01001-000/);
   assert.match(result.content[0].text, /Cidade: São Paulo/);
   assert.match(result.content[0].text, /UF: SP/);
+  assert.deepEqual(result.structuredContent, {
+    encontrado: true,
+    endereco: {
+      cep: '01001-000',
+      logradouro: 'Praça da Sé',
+      bairro: 'Sé',
+      cidade: 'São Paulo',
+      uf: 'SP',
+    },
+  });
+  assert.equal(consultarCepOutputSchema.safeParse(result.structuredContent).success, true);
 });
 
 test('informa quando o ViaCEP não encontra o CEP', async () => {
@@ -42,6 +54,8 @@ test('informa quando o ViaCEP não encontra o CEP', async () => {
 
   assert.equal(result.isError, true);
   assert.equal(result.content[0].text, 'CEP 00000000 não encontrado.');
+  assert.deepEqual(result.structuredContent, { encontrado: false, endereco: null });
+  assert.equal(consultarCepOutputSchema.safeParse(result.structuredContent).success, true);
 });
 
 test('aceita logradouro e bairro vazios em um CEP válido', async () => {
@@ -58,6 +72,7 @@ test('aceita logradouro e bairro vazios em um CEP válido', async () => {
 
   assert.equal(result.isError, undefined);
   assert.match(result.content[0].text, /Logradouro: \nBairro: \nCidade: São Paulo/);
+  assert.equal(consultarCepOutputSchema.safeParse(result.structuredContent).success, true);
 });
 
 test('não apresenta campos indefinidos quando a resposta do ViaCEP é incompleta', async () => {

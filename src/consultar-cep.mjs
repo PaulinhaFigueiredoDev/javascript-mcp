@@ -1,5 +1,6 @@
 import * as z from 'zod/v4';
 import { enderecoViaCepSchema } from './endereco-viacep.mjs';
+import { paraEnderecoEstruturado } from './saida-estruturada.mjs';
 
 export const cepInputSchema = z.object({
   cep: z.string().regex(/^\d{8}$/, 'O CEP deve ter 8 dígitos'),
@@ -21,6 +22,7 @@ export async function consultarCep({ cep }, fetchImpl = fetch) {
     if (dados?.erro === true || dados?.erro === 'true') {
       return {
         content: [{ type: 'text', text: `CEP ${cep} não encontrado.` }],
+        structuredContent: { encontrado: false, endereco: null },
         isError: true,
       };
     }
@@ -32,6 +34,7 @@ export async function consultarCep({ cep }, fetchImpl = fetch) {
         type: 'text',
         text: `CEP: ${endereco.cep}\nLogradouro: ${endereco.logradouro}\nBairro: ${endereco.bairro}\nCidade: ${endereco.localidade}\nUF: ${endereco.uf}`,
       }],
+      structuredContent: { encontrado: true, endereco: paraEnderecoEstruturado(endereco) },
     };
   } catch (error) {
     console.error('Falha ao consultar o ViaCEP:', error);
