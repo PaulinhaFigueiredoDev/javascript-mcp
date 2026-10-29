@@ -1,6 +1,6 @@
 # javascript-mcp
 
-Servidor MCP em JavaScript e Node.js para consultar endereços brasileiros pelo CEP ou buscar possíveis CEPs a partir de um endereço, usando o [ViaCEP](https://viacep.com.br/).
+Servidor MCP em JavaScript e Node.js para consultar endereços brasileiros pelo CEP ou buscar CEPs a partir de um endereço, usando o [ViaCEP](https://viacep.com.br/). Para testar o MCP em funcionamento, use o [Claude Desktop](#testar-com-claude-desktop) ou o [MCP Inspector](#testar-com-mcp-inspector).
 
 ## Sumário
 
@@ -12,14 +12,9 @@ Servidor MCP em JavaScript e Node.js para consultar endereços brasileiros pelo 
 - [Requisitos](#requisitos)
 - [Instalação](#instalação)
 - [Como o servidor inicia](#como-o-servidor-inicia)
-- [Como testar com o MCP Inspector](#como-testar-com-o-mcp-inspector)
-  - [Conectar ao servidor](#passo-1-conectar-ao-servidor)
-  - [Abrir a ferramenta](#passo-2-abrir-a-ferramenta)
-  - [Consultar um CEP válido](#passo-3-consultar-um-cep-válido)
-  - [Conferir a validação](#passo-4-conferir-a-validação)
-  - [Testar a busca por endereço](#passo-5-testar-a-busca-por-endereço)
-- [Testes automatizados](#testes-automatizados)
+- [Como testar](#como-testar)
 - [Estrutura do projeto](#estrutura)
+- [Licença](#licença)
 
 ## Objetivo
 
@@ -87,7 +82,7 @@ Clone o repositório e instale as dependências:
 ```bash
 git clone https://github.com/PaulinhaFigueiredoDev/javascript-mcp.git
 cd javascript-mcp
-npm ci
+npm install
 ```
 
 O projeto usa `@modelcontextprotocol/server` para criar o servidor MCP e `zod` para validar os argumentos das ferramentas. As dependências estão declaradas no `package.json`; não é necessário instalá-las globalmente.
@@ -104,7 +99,58 @@ node src/index.mjs
 
 O terminal ficará aguardando a conexão de um cliente MCP; não aparecerá uma página ou resposta nesse comando. Use `Ctrl+C` para encerrar. Quando um cliente MCP executa o servidor, ele inicia esse processo automaticamente.
 
-## Como testar com o MCP Inspector
+## Como testar
+
+Escolha uma das opções abaixo para abrir as instruções. O Claude Desktop é o caminho mais simples para experimentar as ferramentas em uma conversa.
+
+<details id="testar-com-claude-desktop">
+<summary><strong>Testar com Claude Desktop</strong></summary>
+
+1. Instale o [Claude Desktop](https://claude.com/download) e conclua a [instalação das dependências](#instalação) deste projeto.
+2. Encontre o caminho absoluto do Node.js com `command -v node` no macOS/Linux ou `where.exe node` no Windows. Encontre também o caminho absoluto do arquivo `src/index.mjs` deste repositório.
+3. Abra o arquivo de configuração do Claude Desktop:
+   - macOS: no Finder, pressione **Command + Shift + G**, cole `~/Library/Application Support/Claude/` e abra `claude_desktop_config.json`.
+   - Windows: pressione **Win + R**, digite `%APPDATA%\Claude`, pressione **Enter** e abra `claude_desktop_config.json`.
+
+   Se o arquivo já vier preenchido, mantenha as configurações existentes. Insira `mcpServers` **antes da última chave `}`**, no mesmo nível das outras propriedades, e coloque uma vírgula depois da propriedade anterior. Por exemplo, se o arquivo já tiver `coworkUserFilesPath`, o resultado será (substitua os dois caminhos pelos da sua máquina):
+
+   ```json
+   {
+     "coworkUserFilesPath": "/Users/seu-usuario/Claude",
+     "mcpServers": {
+       "javascript-mcp": {
+         "command": "/caminho/absoluto/para/node",
+         "args": ["/caminho/absoluto/para/javascript-mcp/src/index.mjs"]
+       }
+     }
+   }
+   ```
+
+   `coworkUserFilesPath` aparece apenas como exemplo de uma configuração existente; não é necessário adicioná-la se não estiver no seu arquivo. Se `mcpServers` já existir, adicione apenas `javascript-mcp` dentro dele.
+
+   Se `claude_desktop_config.json` não existir, crie o arquivo nessa pasta. Se estiver vazio ou contiver apenas `{}`, use o exemplo completo abaixo, substituindo os dois caminhos pelos da sua máquina:
+
+   ```json
+   {
+     "mcpServers": {
+       "javascript-mcp": {
+         "command": "/caminho/absoluto/para/node",
+         "args": ["/caminho/absoluto/para/javascript-mcp/src/index.mjs"]
+       }
+     }
+   }
+   ```
+
+   O valor `"node"` em `command` também pode funcionar se o Claude Desktop encontrar o Node.js no `PATH`; usar o caminho absoluto evita depender disso. No Windows, use `/` nos caminhos do JSON ou escape cada `\` como `\\`.
+4. Encerre o Claude Desktop por completo e abra-o novamente para carregar a configuração. Em uma conversa, abra **+ → Connectors** para conferir se `javascript-mcp` e as ferramentas `consultar-cep` e `buscar-ceps-por-endereco` aparecem.
+5. Peça, por exemplo, **“Consulte o CEP 01001000”** e **“Busque CEPs da Praça da Sé em São Paulo, SP”**. Se o Claude solicitar autorização para usar uma ferramenta, permita a execução e confira o resultado na conversa.
+
+O Claude Desktop inicia o servidor automaticamente. Se as ferramentas não aparecerem, confira os caminhos no JSON e se `npm install` foi executado na pasta do projeto. Consulte também os [logs do Claude Desktop](https://modelcontextprotocol.io/docs/tools/debugging#viewing-logs).
+
+</details>
+
+<details id="testar-com-mcp-inspector">
+<summary><strong>Testar com MCP Inspector</strong></summary>
 
 O [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) permite conectar ao servidor, chamar as ferramentas e ver as respostas. Na raiz do repositório, execute:
 
@@ -176,12 +222,12 @@ Na aba **Tools**, selecione **buscar-ceps-por-endereco**. Com **Edit as JSON** d
 
 Em **Results**, você verá a quantidade de correspondências e, para cada uma, CEP, logradouro, bairro, cidade e UF. Se houver mais de 10 resultados, a resposta mostra os primeiros 10 e sugere refinar o logradouro. Para verificar a validação, experimente `logradouro` igual a `Sé`: o Inspector deve mostrar **Tool Error**, pois são necessários pelo menos três caracteres. Experimente também `123`: a mensagem deve informar que o logradouro precisa conter pelo menos uma letra.
 
-## Testes automatizados
+### Testes automatizados
 
 Para repetir no navegador o caminho de um usuario usando o Inspector, instale as dependências e o Chromium do Playwright uma vez:
 
 ```bash
-npm ci
+npm install
 npx playwright install chromium
 ```
 
@@ -197,6 +243,8 @@ O primeiro comando inicia o MCP Inspector e o servidor automaticamente, executa 
 O teste consulta o CEP `04344902` e busca `Rua Augusta` em São Paulo usando o **ViaCEP real**, comparando o texto mostrado no Inspector com os dados recebidos da API. Na busca, confere os dez primeiros endereços e a indicação do limite. Também envia `abc` para conferir a validação do CEP. É necessária conexão com a internet; uma indisponibilidade ou alteração dos dados da API pode fazer o teste falhar.
 
 O workflow de CI também instala o Chromium e executa `npm run test:e2e` após os testes do Node.js.
+
+</details>
 
 ## Estrutura
 
@@ -214,5 +262,10 @@ javascript-mcp/
 │   └── entendendo-mcp.md # Conceitos e referências para estudo
 ├── package.json       # Dependências do projeto
 ├── commitlint.config.cjs # Regra de mensagens de commit
+├── LICENSE            # Licença ISC do projeto
 └── README.md
 ```
+
+## Licença
+
+Este projeto é distribuído sob a [licença ISC](LICENSE).
