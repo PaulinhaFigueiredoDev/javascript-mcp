@@ -49,7 +49,7 @@ test('usuário recebe erro de validação ao enviar um CEP inválido', async ({ 
   await expect(page.getByRole('alert', { name: 'Tool Error' })).toContainText('O CEP deve ter 8 dígitos');
 });
 
-test('usuário vê os dez primeiros endereços reais quando o ViaCEP retorna mais', async ({ page }, testInfo) => {
+test('usuário percorre as duas primeiras páginas de endereços reais', async ({ page }, testInfo) => {
   const uf = 'SP';
   const cidade = 'São Paulo';
   const logradouro = 'Rua Augusta';
@@ -70,6 +70,18 @@ test('usuário vê os dez primeiros endereços reais quando o ViaCEP retorna mai
   const itens = enderecos.slice(0, 10).map((endereco, indice) =>
     `${indice + 1}. CEP: ${endereco.cep}\nLogradouro: ${endereco.logradouro}\nBairro: ${endereco.bairro}\nCidade: ${endereco.localidade}\nUF: ${endereco.uf}`,
   );
-  const textoEsperado = `Exibindo 10 de ${enderecos.length} resultados. Refine o logradouro para uma busca mais precisa.\n\n${itens.join('\n\n')}`;
+  const textoEsperado = `Exibindo 1 a 10 de ${enderecos.length} resultados retornados pelo ViaCEP. Para ver os próximos, repita a busca com offset=10.\n\n${itens.join('\n\n')}`;
   await expect(page.getByText(textoEsperado, { exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Close results' }).click();
+  await page.getByLabel('offset').fill('10');
+  await page.getByRole('button', { name: 'Execute Tool' }).click();
+
+  const segundaPagina = enderecos.slice(10, 20).map((endereco, indice) =>
+    `${indice + 11}. CEP: ${endereco.cep}\nLogradouro: ${endereco.logradouro}\nBairro: ${endereco.bairro}\nCidade: ${endereco.localidade}\nUF: ${endereco.uf}`,
+  );
+  const fim = Math.min(20, enderecos.length);
+  const proximo = fim < enderecos.length ? ` Para ver os próximos, repita a busca com offset=${fim}.` : '';
+  const textoSegundaPagina = `Exibindo 11 a ${fim} de ${enderecos.length} resultados retornados pelo ViaCEP.${proximo}\n\n${segundaPagina.join('\n\n')}`;
+  await expect(page.getByText(textoSegundaPagina, { exact: true })).toBeVisible();
 });

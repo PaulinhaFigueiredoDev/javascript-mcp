@@ -28,10 +28,10 @@ const handle = serveStdio(() => {
     server.registerTool(
       'buscar-ceps-por-endereco',
       {
-        description: 'Busca CEPs pela UF, cidade e logradouro. Pode retornar vários endereços.',
+        description: 'Busca CEPs pela UF, cidade e logradouro. Retorna até 10 por chamada; use offset para obter os próximos resultados.',
         inputSchema: enderecoInputSchema,
       },
-      ({ uf, cidade, logradouro }) => buscarCepsPorEndereco({ uf, cidade, logradouro }),
+      ({ uf, cidade, logradouro, offset, limit }) => buscarCepsPorEndereco({ uf, cidade, logradouro, offset, limit }),
     );
 
     return server;

@@ -50,6 +50,14 @@ Um CEP com formato inválido é rejeitado pela validação. Se o CEP não existi
 
 `buscar-ceps-por-endereco` recebe três campos obrigatórios: `uf` (duas letras), `cidade` e `logradouro` (pelo menos três caracteres cada). O logradouro precisa conter uma letra: `123` é inválido, mas `Rua 25 de Março` é aceito. Use quando souber o endereço, mas não o CEP. A busca pode retornar vários endereços; quanto mais específico for o logradouro, mais precisa tende a ser a lista. O [ViaCEP limita a pesquisa a 50 CEPs](https://viacep.com.br/); esta tool mostra até 10 por chamada para manter o resultado legível.
 
+Para ver os resultados seguintes, repita a busca com os mesmos dados e informe `offset`: ele começa em `0` e pode ir até `49`. O campo opcional `limit` define quantos resultados mostrar por chamada, de `1` a `10` (padrão: `10`). A resposta informa o próximo `offset` quando houver mais resultados entre os devolvidos pelo ViaCEP. Por exemplo, para ver os itens 11 a 20:
+
+```json
+{ "uf": "SP", "cidade": "São Paulo", "logradouro": "Rua Augusta", "offset": 10, "limit": 10 }
+```
+
+Se o ViaCEP atingir seu limite de 50 resultados, refine o logradouro para encontrar endereços fora dessa lista.
+
 Exemplo de entrada JSON:
 
 ```json
@@ -220,7 +228,7 @@ O painel **Protocol**, à direita, registra as mensagens trocadas entre o Inspec
 
 Na aba **Tools**, selecione **buscar-ceps-por-endereco**. Com **Edit as JSON** desligado, preencha os campos `uf` com `SP`, `cidade` com `São Paulo` e `logradouro` com `Praça da Sé`. Clique em **Execute Tool**. Se preferir **Edit as JSON**, use o objeto do [exemplo acima](#buscar-ceps-pelo-endereço).
 
-Em **Results**, você verá a quantidade de correspondências e, para cada uma, CEP, logradouro, bairro, cidade e UF. Se houver mais de 10 resultados, a resposta mostra os primeiros 10 e sugere refinar o logradouro. Para verificar a validação, experimente `logradouro` igual a `Sé`: o Inspector deve mostrar **Tool Error**, pois são necessários pelo menos três caracteres. Experimente também `123`: a mensagem deve informar que o logradouro precisa conter pelo menos uma letra.
+Em **Results**, você verá a quantidade de correspondências e, para cada uma, CEP, logradouro, bairro, cidade e UF. Se houver mais de 10 resultados, a resposta mostra os primeiros 10 e informa o próximo `offset`. Para ver os itens seguintes, mantenha UF, cidade e logradouro e preencha `offset` com o número indicado. Para verificar a validação, experimente `logradouro` igual a `Sé`: o Inspector deve mostrar **Tool Error**, pois são necessários pelo menos três caracteres. Experimente também `123`: a mensagem deve informar que o logradouro precisa conter pelo menos uma letra.
 
 ### Testes automatizados
 
@@ -240,7 +248,7 @@ npx playwright show-report
 
 O primeiro comando inicia o MCP Inspector e o servidor automaticamente, executa os testes no Chromium e grava os passos da navegação. O segundo abre o relatório no navegador. Clique em um teste e depois em **Trace** para ver cada ação, as imagens da página e o resultado exibido pelo Inspector. A resposta consultada no ViaCEP também aparece como anexo `resposta-real-viacep.json`. Para acompanhar o navegador enquanto a automação acontece, acrescente `--headed` ao primeiro comando.
 
-O teste consulta o CEP `04344902` e busca `Rua Augusta` em São Paulo usando o **ViaCEP real**, comparando o texto mostrado no Inspector com os dados recebidos da API. Na busca, confere os dez primeiros endereços e a indicação do limite. Também envia `abc` para conferir a validação do CEP. É necessária conexão com a internet; uma indisponibilidade ou alteração dos dados da API pode fazer o teste falhar.
+O teste consulta o CEP `04344902` e busca `Rua Augusta` em São Paulo usando o **ViaCEP real**, comparando o texto mostrado no Inspector com os dados recebidos da API. Na busca, confere a primeira e a segunda página de endereços. Também envia `abc` para conferir a validação do CEP. É necessária conexão com a internet; uma indisponibilidade ou alteração dos dados da API pode fazer o teste falhar.
 
 O workflow de CI também instala o Chromium e executa `npm run test:e2e` após os testes do Node.js.
 

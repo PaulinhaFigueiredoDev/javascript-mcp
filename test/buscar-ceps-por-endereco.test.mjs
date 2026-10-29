@@ -19,6 +19,10 @@ test('valida UF, cidade e logradouro antes da busca', () => {
   }
 
   assert.equal(enderecoInputSchema.safeParse({ uf: 'SP', cidade: 'São Paulo', logradouro: 123 }).success, false);
+  assert.equal(enderecoInputSchema.safeParse({ uf: 'SP', cidade: 'São Paulo', logradouro: 'Rua Teste', offset: 49, limit: 10 }).success, true);
+  for (const extras of [{ offset: -1 }, { offset: 50 }, { offset: 1.5 }, { limit: 0 }, { limit: 11 }, { limit: 2.5 }]) {
+    assert.equal(enderecoInputSchema.safeParse({ uf: 'SP', cidade: 'São Paulo', logradouro: 'Rua Teste', ...extras }).success, false);
+  }
 });
 
 test('busca CEPs com os segmentos da URL codificados e apresenta os endereços', async () => {
@@ -89,7 +93,7 @@ test('rejeita a lista inteira se houver um endereço incompleto, mesmo além dos
   }
 });
 
-test('limita a resposta a dez endereços', async () => {
+test('permite buscar os resultados depois dos dez primeiros', async () => {
   const enderecos = Array.from({ length: 11 }, (_, indice) => ({
     cep: String(indice).padStart(8, '0'),
     logradouro: 'Rua Teste',
@@ -97,14 +101,43 @@ test('limita a resposta a dez endereços', async () => {
     localidade: 'São Paulo',
     uf: 'SP',
   }));
-  const result = await buscarCepsPorEndereco(
-    { uf: 'SP', cidade: 'São Paulo', logradouro: 'Rua Teste' },
-    async () => ({ ok: true, json: async () => enderecos }),
-  );
+  const fetchImpl = async () => ({ ok: true, json: async () => enderecos });
+  const entrada = { uf: 'SP', cidade: 'São Paulo', logradouro: 'Rua Teste' };
+  const result = await buscarCepsPorEndereco(entrada, fetchImpl);
 
-  assert.match(result.content[0].text, /Exibindo 10 de 11 resultados/);
+  assert.match(result.content[0].text, /Exibindo 1 a 10 de 11 resultados retornados pelo ViaCEP/);
+  assert.match(result.content[0].text, /offset=10/);
   assert.match(result.content[0].text, /CEP: 00000009/);
   assert.doesNotMatch(result.content[0].text, /CEP: 00000010/);
+
+  const ultimaPagina = await buscarCepsPorEndereco({ ...entrada, offset: 10 }, fetchImpl);
+  assert.equal(ultimaPagina.isError, undefined);
+  assert.match(ultimaPagina.content[0].text, /Exibindo 11 a 11 de 11 resultados/);
+  assert.match(ultimaPagina.content[0].text, /11\. CEP: 00000010/);
+  assert.doesNotMatch(ultimaPagina.content[0].text, /offset=11/);
+});
+
+test('respeita o limite escolhido e informa quando o offset está fora da lista', async () => {
+  const enderecos = Array.from({ length: 5 }, (_, indice) => ({
+    cep: String(indice).padStart(8, '0'),
+    logradouro: 'Rua Teste',
+    bairro: 'Centro',
+    localidade: 'São Paulo',
+    uf: 'SP',
+  }));
+  const fetchImpl = async () => ({ ok: true, json: async () => enderecos });
+  const entrada = { uf: 'SP', cidade: 'São Paulo', logradouro: 'Rua Teste' };
+
+  const pagina = await buscarCepsPorEndereco({ ...entrada, offset: 2, limit: 2 }, fetchImpl);
+  assert.match(pagina.content[0].text, /Exibindo 3 a 4 de 5 resultados/);
+  assert.match(pagina.content[0].text, /3\. CEP: 00000002/);
+  assert.match(pagina.content[0].text, /offset=4/);
+  assert.doesNotMatch(pagina.content[0].text, /CEP: 00000004/);
+
+  const foraDaLista = await buscarCepsPorEndereco({ ...entrada, offset: 5 }, fetchImpl);
+  assert.equal(foraDaLista.isError, undefined);
+  assert.match(foraDaLista.content[0].text, /nenhum a partir do offset 5/);
+  assert.match(foraDaLista.content[0].text, /offset entre 0 e 4/);
 });
 
 test('retorna erro quando a API falha ou responde em formato inesperado', async () => {
