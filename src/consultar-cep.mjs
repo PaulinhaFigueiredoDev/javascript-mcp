@@ -1,4 +1,5 @@
 import * as z from 'zod/v4';
+import { enderecoViaCepSchema } from './endereco-viacep.mjs';
 
 export const cepInputSchema = z.object({
   cep: z.string().regex(/^\d{8}$/, 'O CEP deve ter 8 dígitos'),
@@ -14,15 +15,17 @@ export async function consultarCep({ cep }, fetchImpl = fetch) {
       throw new Error(`ViaCEP respondeu com HTTP ${response.status}`);
     }
 
-    const endereco = await response.json();
+    const dados = await response.json();
 
     // O ViaCEP indica um CEP inexistente com o campo "erro" na resposta.
-    if (endereco.erro) {
+    if (dados?.erro === true || dados?.erro === 'true') {
       return {
         content: [{ type: 'text', text: `CEP ${cep} não encontrado.` }],
         isError: true,
       };
     }
+
+    const endereco = enderecoViaCepSchema.parse(dados);
 
     return {
       content: [{
