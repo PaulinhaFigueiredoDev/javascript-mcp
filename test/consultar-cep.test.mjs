@@ -44,6 +44,41 @@ test('informa quando o ViaCEP não encontra o CEP', async () => {
   assert.equal(result.content[0].text, 'CEP 00000000 não encontrado.');
 });
 
+test('aceita logradouro e bairro vazios em um CEP válido', async () => {
+  const result = await consultarCep({ cep: '01001000' }, async () => ({
+    ok: true,
+    json: async () => ({
+      cep: '01001-000',
+      logradouro: '',
+      bairro: '',
+      localidade: 'São Paulo',
+      uf: 'SP',
+    }),
+  }));
+
+  assert.equal(result.isError, undefined);
+  assert.match(result.content[0].text, /Logradouro: \nBairro: \nCidade: São Paulo/);
+});
+
+test('não apresenta campos indefinidos quando a resposta do ViaCEP é incompleta', async () => {
+  const log = mock.method(console, 'error', () => {});
+  try {
+    for (const dados of [null, {}, { cep: '01001-000', logradouro: '', bairro: '', localidade: 'São Paulo', uf: 35 }]) {
+      const result = await consultarCep({ cep: '01001000' }, async () => ({
+        ok: true,
+        json: async () => dados,
+      }));
+
+      assert.equal(result.isError, true);
+      assert.match(result.content[0].text, /Não foi possível consultar o ViaCEP agora/);
+      assert.doesNotMatch(result.content[0].text, /undefined/);
+    }
+    assert.equal(log.mock.callCount(), 3);
+  } finally {
+    log.mock.restore();
+  }
+});
+
 test('retorna erro quando o ViaCEP responde com falha HTTP', async () => {
   const log = mock.method(console, 'error', () => {});
   try {

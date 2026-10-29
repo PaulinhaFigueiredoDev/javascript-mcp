@@ -1,4 +1,5 @@
 import * as z from 'zod/v4';
+import { enderecoViaCepSchema } from './endereco-viacep.mjs';
 
 export const enderecoInputSchema = z.object({
   uf: z.string().regex(/^[A-Za-z]{2}$/, 'A UF deve ter 2 letras'),
@@ -24,11 +25,7 @@ export async function buscarCepsPorEndereco({ uf, cidade, logradouro }, fetchImp
       throw new Error(`ViaCEP respondeu com HTTP ${response.status}`);
     }
 
-    const enderecos = await response.json();
-
-    if (!Array.isArray(enderecos)) {
-      throw new Error('ViaCEP respondeu em um formato inesperado');
-    }
+    const enderecos = z.array(enderecoViaCepSchema).parse(await response.json());
 
     if (enderecos.length === 0) {
       return {

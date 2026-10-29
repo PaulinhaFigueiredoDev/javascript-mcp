@@ -56,6 +56,39 @@ test('informa quando a busca não encontra CEPs', async () => {
   assert.match(result.content[0].text, /Nenhum CEP encontrado/);
 });
 
+test('aceita logradouro e bairro vazios em um endereço da busca', async () => {
+  const result = await buscarCepsPorEndereco(
+    { uf: 'SP', cidade: 'São Paulo', logradouro: 'Rua Teste' },
+    async () => ({ ok: true, json: async () => [{
+      cep: '01001-000', logradouro: '', bairro: '', localidade: 'São Paulo', uf: 'SP',
+    }] }),
+  );
+
+  assert.equal(result.isError, undefined);
+  assert.match(result.content[0].text, /Logradouro: \nBairro: \nCidade: São Paulo/);
+});
+
+test('rejeita a lista inteira se houver um endereço incompleto, mesmo além dos dez exibidos', async () => {
+  const log = mock.method(console, 'error', () => {});
+  try {
+    const enderecos = Array.from({ length: 10 }, () => ({
+      cep: '01001-000', logradouro: 'Rua Teste', bairro: 'Centro', localidade: 'São Paulo', uf: 'SP',
+    }));
+    enderecos.push({ cep: '01001-000' });
+
+    const result = await buscarCepsPorEndereco(
+      { uf: 'SP', cidade: 'São Paulo', logradouro: 'Rua Teste' },
+      async () => ({ ok: true, json: async () => enderecos }),
+    );
+
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /Não foi possível buscar CEPs no ViaCEP agora/);
+    assert.equal(log.mock.callCount(), 1);
+  } finally {
+    log.mock.restore();
+  }
+});
+
 test('limita a resposta a dez endereços', async () => {
   const enderecos = Array.from({ length: 11 }, (_, indice) => ({
     cep: String(indice).padStart(8, '0'),
